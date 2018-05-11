@@ -5,9 +5,9 @@ class ScoreCard {
   constructor () {
     this.name = el('div')
     this.graph = new ScoreGraph()
-    this.el = el('div', [this.name, this.graph])
-    this.el.style.float = 'left'
-    this.el.style.margin = '10px'
+    this.el = el('div',
+      [this.name, this.graph],
+      {style: {float: 'left', margin: '10px'}})
   }
   update (data) {
     this.graph.update(data)
@@ -33,9 +33,11 @@ class GradeGraph {
     this.el = el('div')
   }
   update (data, index, items, context) {
-    this.el.style.backgroundColor = context.colors[index]
-    this.el.style.width = `${context.width}px`
-    this.el.style.height = `${data * context.height}px`
+    this.el.style = {
+      backgroundColor: context.colors[index],
+      width: `${context.width}px`,
+      height: `${data * context.height}px`
+    }
   }
 }
 
