@@ -1,7 +1,7 @@
 # maju 🗳️
 **`maju`** (for **ma**jority **ju**dgment) is a Javascript library implementing the Majority Judgment voting system.
 
-[More info on majority judgment](#Majority-Judgment)
+[More info on majority judgment](#majority-judgment)
 
 ## Usage
 Add maju to your project with `npm i maju` or `yarn add maju`
