@@ -4,7 +4,7 @@
   "description": "maju (for MAjority JUdgment) is a Javascript library implementing the Majority Judgment voting system.",
   "main": "index.js",
   "scripts": {
-    "demo": "parcel demo/index.html",
+    "demo": "parcel serve demo/index.html",
     "demo:node": "node demo/index.js"
   },
   "keywords": [
@@ -13,13 +13,10 @@
   ],
   "author": "@romaindurand",
   "license": "ISC",
-  "dependencies": {
-    "lodash": "^4.17.10"
-  },
   "devDependencies": {
-    "gradient-color": "^2.0.1",
     "npm-run-all": "^4.1.3",
     "parcel": "^1.8.1",
-    "redom": "^3.12.3"
+    "redom": "^3.12.3",
+    "tinygradient": "^0.4.0"
   }
 }

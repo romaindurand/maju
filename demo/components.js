@@ -1,15 +1,25 @@
 const { el, list } = require('redom')
-const gradient = require('gradient-color').default
+const tinygradient = require('tinygradient')
+
+class App {
+  constructor () {
+    this.scoreGraphList = list('div', ScoreCard)
+    this.el = el('div.app',
+      [this.scoreGraphList]
+    )
+  }
+  update (data) {
+    this.scoreGraphList.update(data)
+  }
+}
 
 class ScoreCard {
   constructor () {
-    this.name = el('div')
+    this.name = el('div', {style: scoreCardTitleStyle})
     this.graph = new ScoreGraph()
-    this.el = el('div',
-      [this.name, this.graph],
-      {style: {float: 'left', margin: '10px'}})
+    this.el = el('div', [this.name, this.graph], {style: scoreCardStyle})
   }
-  update (data) {
+  update (data, index, items, context) {
     this.graph.update(data)
     this.name.textContent = data.name
   }
@@ -17,13 +27,23 @@ class ScoreCard {
 
 class ScoreGraph {
   constructor () {
-    this.el = list('div', GradeGraph)
+    this.gradeGraphList = list('div', GradeGraph)
+    this.medianLine = el('div', { style: medianLineStyle })
+    this.el = el('div', [
+      this.gradeGraphList,
+      this.medianLine
+    ], { style: { position: 'relative' } })
   }
   update (data) {
-    this.el.update(data.scoreRatio.slice().reverse(), {
+    this.medianLine.style.width = `${data.width}px`
+    this.medianLine.style.left = `calc(50% - ${data.width / 2}px`
+    const gradient = tinygradient(['#00FF00', '#FF0000'])
+    const tinycolors = gradient.hsv(data.scoreRatio.length, true)
+    const colors = tinycolors.map(tinycolor => tinycolor.toHexString())
+    this.gradeGraphList.update(data.scoreRatio.slice().reverse(), {
       width: data.width,
       height: data.height,
-      colors: gradient(['#00FF00', '#FF0000'], data.scoreRatio.length)
+      colors
     })
   }
 }
@@ -33,14 +53,34 @@ class GradeGraph {
     this.el = el('div')
   }
   update (data, index, items, context) {
-    this.el.style = {
+    Object.assign(this.el.style, {
       backgroundColor: context.colors[index],
       width: `${context.width}px`,
-      height: `${data * context.height}px`
-    }
+      height: `${data * context.height}px`,
+      left: `calc(50% - ${context.width / 2}px)`,
+      position: 'relative'
+    })
   }
 }
 
 module.exports = {
-  ScoreCard
+  App
+}
+
+const scoreCardStyle = {
+  float: 'left',
+  margin: '10px',
+  border: '1px solid lightgrey',
+  paddingBottom: '10px',
+  boxShadow: '0 0 7px black',
+  borderRadius: '3px'
+}
+
+const scoreCardTitleStyle = { fontFamily: 'Arial', margin: '5px' }
+
+const medianLineStyle = {
+  height: '1px',
+  position: 'absolute',
+  top: '50%',
+  backgroundColor: 'black'
 }
