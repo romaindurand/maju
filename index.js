@@ -14,7 +14,8 @@ module.exports = function createPoll (optionList, configuration = { GRADING_LEVE
     getScoreRatio,
     getWinner,
     isTie,
-    getSortedOptions
+    getSortedOptions,
+    GRADING_LEVELS
   }
 
   // Poll-context-bound functions
@@ -40,11 +41,12 @@ module.exports = function createPoll (optionList, configuration = { GRADING_LEVE
   }
 
   function getWinner () {
-    return getSortedOptions()[0].name
+    return getSortedOptions()[0]
   }
 
   function getSortedOptions () {
     return getScoreRatio().sort((a, b) => {
+      // First, order by median grade
       const aMedianGrade = getMedianGrade(a.scoreRatio)
       const bMedianGrade = getMedianGrade(b.scoreRatio)
       if (aMedianGrade !== bMedianGrade) return bMedianGrade - aMedianGrade
@@ -79,7 +81,7 @@ module.exports = function createPoll (optionList, configuration = { GRADING_LEVE
         return 0
       }
       return sortedCriterias[0].returnValue
-    })
+    }).map(option => option.name)
   }
 
   function isTie () {
