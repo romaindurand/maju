@@ -25,7 +25,7 @@ console.log(myPoll.getWinner())
 ```
 
 ## Demo
-_⚠️ Don't forget to install dev dependancies with `yarn` or `npm i`_
+⚠️ _Don't forget to install dev dependancies with `yarn` or `npm i`_
 
 Refer to `demo/index.js` for an usage example
 - `yarn demo:node` for a node-only example
@@ -38,3 +38,8 @@ Majority judgment is a single-winner voting system. Voters freely grade each can
 - ScienceEtonnante video : https://www.youtube.com/watch?v=ZoGH7d51bvc (french audio, english subtitles)
 - On voting systems : https://www.youtube.com/watch?v=vfTJ4vmIsO4 (french audio, english subtitles)
 - Science4All video : https://www.youtube.com/watch?v=_MAo8pUl0U4 (french audio)
+
+## TODO
+- [ ] Create unit tests
+- [ ] Create test suite (createPoll, votes, getSortedOptions)
+- [ ] When sort criterias are equal, search deeper before ignoring them
