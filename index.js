@@ -45,43 +45,11 @@ module.exports = function createPoll (optionList, configuration = { GRADING_LEVE
   }
 
   function getSortedOptions () {
-    return getScoreRatio().sort((a, b) => {
-      // First, order by median grade
-      const aMedianGrade = getMedianGrade(a.scoreRatio)
-      const bMedianGrade = getMedianGrade(b.scoreRatio)
-      if (aMedianGrade !== bMedianGrade) return bMedianGrade - aMedianGrade
-
-      // Tie-break algorithm
-      // Following the process described here : https://fr.wikipedia.org/wiki/Jugement_majoritaire#D%C3%A9partage_des_%C3%A9galit%C3%A9s
-      // We list all lose/win-criterias associated with the appropriate return value, and sort them to find the highest ratio value
-      const A_LOSES = 1
-      const A_WIN = -1
-
-      const criterias = []
-      const aLoseCriteria = { ratio: getRatioBelowMedian(a.scoreRatio), returnValue: A_LOSES }
-      const bLoseCriteria = { ratio: getRatioBelowMedian(b.scoreRatio), returnValue: A_WIN }
-      const aWinCriteria = { ratio: getRatioAboveMedian(a.scoreRatio), returnValue: A_WIN }
-      const bWinCriteria = { ratio: getRatioAboveMedian(b.scoreRatio), returnValue: A_LOSES }
-
-      // If lose criteria ratios are equal, we ignore them (not strictly comarable)
-      if (aLoseCriteria.ratio !== bLoseCriteria.ratio) {
-        criterias.push(aLoseCriteria)
-        criterias.push(bLoseCriteria)
-      }
-      // If win criteria ratios are equal, we ignore them (not strictly comarable)
-      if (aWinCriteria.ratio !== bWinCriteria.ratio) {
-        criterias.push(aWinCriteria)
-        criterias.push(bWinCriteria)
-      }
-
-      const sortedCriterias = criterias.slice().sort((critA, critB) => critB.ratio - critA.ratio)
-      if (sortedCriterias.length === 0) {
-        // TODO : handle this improbable situation more gracefully
-        // by searching who benefits/loses the most in the upper/lower ratios
-        return 0
-      }
-      return sortedCriterias[0].returnValue
-    }).map(option => option.name)
+    const votes = getVotes()
+    return getScoreRatio()
+      .map((scoreRatio, index) => Object.assign(scoreRatio, votes[index]))
+      .sort(sortAlgorithm)
+      .map(option => option.name)
   }
 
   function isTie () {
@@ -117,6 +85,19 @@ module.exports = function createPoll (optionList, configuration = { GRADING_LEVE
     })
   }
 
+  function getVotes () {
+    return getScoreCount().map(option => {
+      const votes = option.scoreCount.reduce((memo, scoreCount, index) => {
+        memo = memo.concat(new Array(scoreCount).fill(index))
+        return memo
+      }, [])
+      return {
+        name: option.name,
+        votes
+      }
+    })
+  }
+
   /**
    * Returns an array of option objects { name: String, scoreCount: Array }
    * Each scoreRatio item represents the amount of voters giving at least the item index score for this option
@@ -138,6 +119,24 @@ module.exports = function createPoll (optionList, configuration = { GRADING_LEVE
 }
 
 // Non-context-bound functions
+
+function sortAlgorithm (a, b) {
+  // First, order by median grade
+  let aMedianGrade = getMedianGrade(a.scoreRatio)
+  let bMedianGrade = getMedianGrade(b.scoreRatio)
+  if (aMedianGrade !== bMedianGrade) return bMedianGrade - aMedianGrade
+
+  // Tie-break algorithm
+  // substract votes from each candidate median grade while their median grade are equal
+  while (aMedianGrade === bMedianGrade) {
+    aMedianGrade = substractMedianVote(a)
+    bMedianGrade = substractMedianVote(b)
+  }
+}
+
+function substractMedianVote (option) {
+  // TODO
+}
 
 /**
  * @param {Object[]} normalizedOptions An array of option objects with a 'name' attribute
@@ -169,22 +168,6 @@ function getMedianGrade (scoreRatio) {
 
 function isScoreValid (score, GRADING_LEVELS) {
   return Number.isInteger(score) || score < 0 || score > (GRADING_LEVELS - 1)
-}
-
-function getRatioAboveMedian (scoreRatio) {
-  const medianGrade = getMedianGrade(scoreRatio)
-  return scoreRatio.reduce((memo, ratio, index) => {
-    if (index > medianGrade) memo += ratio
-    return memo
-  }, 0)
-}
-
-function getRatioBelowMedian (scoreRatio) {
-  const medianGrade = getMedianGrade(scoreRatio)
-  return scoreRatio.reduce((memo, ratio, index) => {
-    if (index < medianGrade) memo += ratio
-    return memo
-  }, 0)
 }
 
 function stringArrayEqual (array1, array2) {
