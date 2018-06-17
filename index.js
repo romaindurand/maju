@@ -13,7 +13,6 @@ module.exports = function createPoll (optionList, configuration = { GRADING_LEVE
     getScoreCount,
     getScoreRatio,
     getWinner,
-    isTie,
     getSortedOptions,
     GRADING_LEVELS
   }
@@ -26,18 +25,14 @@ module.exports = function createPoll (optionList, configuration = { GRADING_LEVE
   function vote (ratings) {
     const givenOptionNames = Object.keys(ratings).sort()
     const optionNames = getOptionNames(normalizedOptions).sort()
-    // Check if the given ratings has a key for each otion
-    if (!stringArrayEqual(optionNames, givenOptionNames)) {
-      throw new Error(`Given object keys doesn't match available options :\ngiven:    ${givenOptionNames.toString()}\nexpected: ${optionNames}`)
-    }
+    // Check if the given ratings has a key for each option
+    stringArrayEqual(optionNames, givenOptionNames)
     givenOptionNames.forEach(ratingKey => {
       const score = ratings[ratingKey]
-      if (!isScoreValid(score, GRADING_LEVELS)) {
-        throw new Error(`A score must be an Integer between 0 and ${GRADING_LEVELS - 1} (${GRADING_LEVELS} possible grades)\ngiven score: ${score}`)
-      }
+      isScoreValid(score, GRADING_LEVELS)
     })
-    const votegrades = normalizedOptions.map(option => ratings[option.name], [])
-    votes.push(votegrades)
+    const voteGrades = normalizedOptions.map(option => ratings[option.name], [])
+    votes.push(voteGrades)
   }
 
   function getWinner () {
@@ -45,26 +40,9 @@ module.exports = function createPoll (optionList, configuration = { GRADING_LEVE
   }
 
   function getSortedOptions () {
-    const votes = getVotes()
-    return getScoreRatio()
-      .map((scoreRatio, index) => Object.assign(scoreRatio, votes[index]))
+    return getVotes()
       .sort(sortAlgorithm)
       .map(option => option.name)
-  }
-
-  function isTie () {
-    const bestGrade = getBestGrade()
-    return getScoreRatio()
-      .map(option => getMedianGrade(option.scoreRatio))
-      .filter(medianGrade => medianGrade === bestGrade).length > 1
-  }
-
-  function getBestGrade () {
-    return getScoreRatio().reduce((memo, option) => {
-      const medianGrade = getMedianGrade(option.scoreRatio)
-      memo = Math.max(medianGrade, memo)
-      return memo
-    }, 0)
   }
 
   /**
@@ -122,20 +100,34 @@ module.exports = function createPoll (optionList, configuration = { GRADING_LEVE
 
 function sortAlgorithm (a, b) {
   // First, order by median grade
-  let aMedianGrade = getMedianGrade(a.scoreRatio)
-  let bMedianGrade = getMedianGrade(b.scoreRatio)
+  let aMedianGrade = getMedianGrade(a.votes)
+  let bMedianGrade = getMedianGrade(b.votes)
   if (aMedianGrade !== bMedianGrade) return bMedianGrade - aMedianGrade
 
   // Tie-break algorithm
   // substract votes from each candidate median grade while their median grade are equal
-  while (aMedianGrade === bMedianGrade) {
-    aMedianGrade = substractMedianVote(a)
-    bMedianGrade = substractMedianVote(b)
+  // Copy votes to apply algorithm to untouched votes
+  const aVotes = [...a.votes]
+  const bVotes = [...b.votes]
+  while (aMedianGrade === bMedianGrade && a.votes.length) {
+    substractMedianVote(a)
+    substractMedianVote(b)
+    aMedianGrade = getMedianGrade(a.votes)
+    bMedianGrade = getMedianGrade(b.votes)
   }
+  a.votes = aVotes
+  b.votes = bVotes
+  return bMedianGrade - aMedianGrade
 }
 
 function substractMedianVote (option) {
-  // TODO
+  const medianGrade = getMedianGrade(option.votes)
+  let index = 0
+  while (index < option.votes.length - 1 && option.votes[index] < medianGrade) {
+    index++
+  }
+  option.votes.splice(index, 1)
+  return getMedianGrade(option.votes)
 }
 
 /**
@@ -160,16 +152,23 @@ function normalizeOptions (options) {
   }, [])
 }
 
-function getMedianGrade (scoreRatio) {
-  let medianGrade = 0
-  for (let acc = scoreRatio[medianGrade]; acc < 0.5; acc += scoreRatio[medianGrade]) medianGrade += 1
-  return medianGrade
+/**
+ * @param {Number[]} votes A sorted array of votes
+ */
+function getMedianGrade (votes) {
+  if (votes.length === 1) return votes[0]
+  const medianIndex = Math.ceil(votes.length / 2) - 1
+  return votes[medianIndex]
 }
 
 function isScoreValid (score, GRADING_LEVELS) {
-  return Number.isInteger(score) || score < 0 || score > (GRADING_LEVELS - 1)
+  const isValid = Number.isInteger(score) || score < 0 || score > (GRADING_LEVELS - 1)
+  if (!isValid) throw new Error(`A score must be an Integer between 0 and ${GRADING_LEVELS - 1} (${GRADING_LEVELS} possible grades)\ngiven score: ${score}`)
+  return isValid
 }
 
 function stringArrayEqual (array1, array2) {
-  return array1.every((value, index) => value === array2[index]) && array1.length === array2.length
+  const areEqual = array1.every((value, index) => value === array2[index]) && array1.length === array2.length
+  if (!areEqual) throw new Error(`Given object keys doesn't match available options :\ngiven:    ${array1.toString()}\nexpected: ${array2.toString()}`)
+  return areEqual
 }

@@ -10,7 +10,9 @@ class App {
     this.voteForm = new VoteForm({
       voteCallback: (voteObject) => {
         this.majuPoll.vote(voteObject)
-        this.update(this.majuPoll.getScoreRatio())
+        const scoreRatios = this.majuPoll.getScoreRatio()
+        const data = this.majuPoll.getSortedOptions().map(optionName => scoreRatios.find(scoreRatio => scoreRatio.name === optionName))
+        this.update(data)
       },
       optionNames: this.majuPoll.getOptions().map(option => option.name),
       gradingLevels: majuPoll.GRADING_LEVELS
