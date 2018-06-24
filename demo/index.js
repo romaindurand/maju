@@ -15,12 +15,18 @@ myPoll.vote({ Matrix: 5, Stargate: 1, Ghostbusters: 1, Terminator: 3 })
 myPoll.vote({ Matrix: 3, Stargate: 4, Ghostbusters: 2, Terminator: 4 })
 myPoll.vote({ Matrix: 2, Stargate: 3, Ghostbusters: 4, Terminator: 3 })
 myPoll.vote({ Matrix: 4, Stargate: 5, Ghostbusters: 3, Terminator: 5 })
-console.log('getSortedOptions()', myPoll.getSortedOptions())
+
+// test for tied results
+// myPoll.vote({ Matrix: 4, Stargate: 3, Ghostbusters: 4, Terminator: 2 })
+// myPoll.vote({ Matrix: 3, Stargate: 4, Ghostbusters: 3, Terminator: 1 })
+
+const {options, ties} = myPoll.getSortedOptions()
+console.log('getSortedOptions()', {options, ties})
 
 if (typeof document !== 'undefined') {
   document.body.innerHTML = ''
   const app = new App(myPoll)
   const scoreRatios = myPoll.getScoreRatio()
-  app.update(myPoll.getSortedOptions().map(optionName => scoreRatios.find(scoreRatio => scoreRatio.name === optionName)))
+  app.update(options.map(optionName => scoreRatios.find(scoreRatio => scoreRatio.name === optionName)))
   mount(document.body, app)
 }

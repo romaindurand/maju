@@ -36,13 +36,35 @@ module.exports = function createPoll (optionList, configuration = { GRADING_LEVE
   }
 
   function getWinner () {
-    return getSortedOptions()[0]
+    const {options, ties} = getSortedOptions()
+    const winners = [options[0]]
+
+    if (!ties.length) return winners
+
+    const tieMap = ties.reduce((memo, tie, index) => {
+      if (memo[tie[0]] === undefined && memo[tie[1]] === undefined) {
+        memo[tie[0]] = memo[tie[1]] = index
+      } else {
+        memo[tie[0]] = memo[tie[1]] = memo[tie.find(optionName => memo[optionName] !== undefined)]
+      }
+      return memo
+    }, {})
+    const tiedWithWinner = Object.keys(tieMap).filter(optionName =>
+      tieMap[optionName] === tieMap[winners[0]] && optionName !== winners[0]
+    )
+    return [...winners, ...tiedWithWinner]
   }
 
   function getSortedOptions () {
-    return getVotes()
-      .sort(sortAlgorithm)
+    const ties = []
+    const options = getVotes()
+      .sort((a, b) => {
+        const value = sortAlgorithm(a, b)
+        if (value === 0) ties.push([a.name, b.name])
+        return value
+      })
       .map(option => option.name)
+    return {options, ties}
   }
 
   /**
@@ -115,6 +137,7 @@ function sortAlgorithm (a, b) {
     aMedianGrade = getMedianGrade(a.votes)
     bMedianGrade = getMedianGrade(b.votes)
   }
+  if (a.votes.length === 0) aMedianGrade = bMedianGrade = 0
   a.votes = aVotes
   b.votes = bVotes
   return bMedianGrade - aMedianGrade

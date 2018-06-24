@@ -11,7 +11,7 @@ class App {
       voteCallback: (voteObject) => {
         this.majuPoll.vote(voteObject)
         const scoreRatios = this.majuPoll.getScoreRatio()
-        const data = this.majuPoll.getSortedOptions().map(optionName => scoreRatios.find(scoreRatio => scoreRatio.name === optionName))
+        const data = this.majuPoll.getSortedOptions().options.map(optionName => scoreRatios.find(scoreRatio => scoreRatio.name === optionName))
         this.update(data)
       },
       optionNames: this.majuPoll.getOptions().map(option => option.name),
@@ -28,7 +28,8 @@ class App {
       optionNames: this.majuPoll.getOptions().map(option => option.name),
       gradingLevels: this.majuPoll.GRADING_LEVELS
     })
-    this.winner.textContent = `Winner: ${this.majuPoll.getWinner()}`
+    const winner = this.majuPoll.getWinner()
+    this.winner.textContent = winner.length === 1 ? `Winner: ${winner[0]}` : `Tie : ${winner.join(', ')}`
   }
 }
 
