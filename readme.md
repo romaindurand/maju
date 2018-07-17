@@ -40,6 +40,4 @@ Majority judgment is a single-winner voting system. Voters freely grade each can
 - Science4All video : https://www.youtube.com/watch?v=_MAo8pUl0U4 (french audio)
 
 ## TODO
-- [ ] Create unit tests
 - [ ] Create test suite (createPoll, votes, getSortedOptions)
-- [ ] When sort criterias are equal, search deeper before ignoring them
