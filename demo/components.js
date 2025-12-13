@@ -1,5 +1,5 @@
-const { el, list, text } = require('redom')
-const tinygradient = require('tinygradient')
+import { el, list, text } from 'redom'
+import tinygradient from 'tinygradient'
 
 class App {
   constructor (majuPoll) {
@@ -189,9 +189,7 @@ class GradeBox {
   }
 }
 
-module.exports = {
-  App
-}
+export { App }
 
 // Style
 const cardStyle = {
