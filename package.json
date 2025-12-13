@@ -1,6 +1,6 @@
 {
   "name": "maju",
-  "version": "3.0.0-beta.0",
+  "version": "3.0.0-beta.1",
   "description": "maju (for MAjority JUdgment) is a Javascript library implementing the Majority Judgment voting system.",
   "type": "module",
   "exports": {
