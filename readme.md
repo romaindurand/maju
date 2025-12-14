@@ -14,7 +14,7 @@ import createPoll from 'maju';
 const myPoll = createPoll(['Matrix', 'Ghostbusters', 'Terminator', 'Stargate'])
 ```
 
-Use the poll's `addVotes()` function to cast votes. The object parameter must have a property for each poll option name. The value must be an integer between 0 and 5 (the higher the better, no "bad" or "excellent" rank to be speaking-language-independant).
+Use the poll's `addVotes()` function to cast votes. The array parameter must have an object for each vote. Each vote object must have a property for each poll option name. The value must be an integer between 0 and 5 (configurable via `createPoll` options), the higher the better.
 
 ```javascript
 myPoll.addVotes([{ Matrix: 5, Stargate: 1, Ghostbusters: 0, Terminator: 2 }])
@@ -24,6 +24,12 @@ Use the poll's `getResults()` function to get the detailed results.
 
 ```javascript
 console.log(myPoll.getResults())
+```
+
+### Customize grading levels
+
+```javascript
+const myPoll = createPoll(['Matrix', 'Ghostbusters', 'Terminator', 'Stargate'], { GRADING_LEVELS: 6 })
 ```
 
 ### Error Handling

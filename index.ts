@@ -3,9 +3,9 @@ import {
   MissingOptionScoreError,
   InvalidScoreError,
   VoteStructureError
-} from './errors';
+} from './errors.js';
 
-export * from './errors';
+export * from './errors.js';
 
 export interface Configuration {
   GRADING_LEVELS?: number;
