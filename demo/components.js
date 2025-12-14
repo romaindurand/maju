@@ -2,7 +2,7 @@ import { el, list, text } from 'redom'
 import tinygradient from 'tinygradient'
 
 class App {
-  constructor (majuPoll) {
+  constructor(majuPoll) {
     this.majuPoll = majuPoll
     this.winner = el('h1')
     this.winner.style.fontFamily = 'Arial'
@@ -14,7 +14,7 @@ class App {
         const data = this.majuPoll.getSortedOptions().options.map(optionName => scoreRatios.find(scoreRatio => scoreRatio.name === optionName))
         this.update(data)
       },
-      optionNames: this.majuPoll.getOptions().map(option => option.name),
+      optionNames: this.majuPoll.getOptions(),
       gradingLevels: majuPoll.GRADING_LEVELS
     })
     this.el = el('div',
@@ -22,10 +22,10 @@ class App {
       { style: appStyle }
     )
   }
-  update (data) {
+  update(data) {
     this.scoreCardList.update(data.map(option => Object.assign({}, option, { height: 300, width: 35 })))
     this.voteForm.update({
-      optionNames: this.majuPoll.getOptions().map(option => option.name),
+      optionNames: this.majuPoll.getOptions(),
       gradingLevels: this.majuPoll.GRADING_LEVELS
     })
     const winner = this.majuPoll.getWinner()
@@ -36,19 +36,19 @@ class App {
 // Score display
 
 class ScoreCard {
-  constructor () {
+  constructor() {
     this.name = text('')
     this.graph = new ScoreGraph()
-    this.el = el('div', [this.name, this.graph], {style: scoreCardStyle})
+    this.el = el('div', [this.name, this.graph], { style: scoreCardStyle })
   }
-  update (data, index, items, context) {
+  update(data, index, items, context) {
     this.graph.update(data)
     this.name.textContent = data.name
   }
 }
 
 class ScoreGraph {
-  constructor () {
+  constructor() {
     this.gradeGraphList = list('div', GradeGraph)
     this.medianLine = el('div', { style: medianLineStyle })
     this.el = el('div', [
@@ -56,7 +56,7 @@ class ScoreGraph {
       this.medianLine
     ], { style: { position: 'relative', marginTop: '10px' } })
   }
-  update (data) {
+  update(data) {
     this.medianLine.style.width = `${data.width}px`
     this.medianLine.style.left = `calc(50% - ${data.width / 2}px`
     const gradient = tinygradient(['#88FF88', '#880000'])
@@ -71,13 +71,15 @@ class ScoreGraph {
 }
 
 class GradeGraph {
-  constructor () {
-    this.value = el('div', {style: {
-      textAlign: 'center'
-    }})
+  constructor() {
+    this.value = el('div', {
+      style: {
+        textAlign: 'center'
+      }
+    })
     this.el = el('div', this.value)
   }
-  update (data, index, items, context) {
+  update(data, index, items, context) {
     this.value.textContent = `${data * 100}`.slice(0, 4) + '%'
     this.value.style.lineHeight = `${data * context.height}px`
     Object.assign(this.el.style, {
@@ -95,7 +97,7 @@ class GradeGraph {
 // Vote input
 
 class VoteForm {
-  constructor ({ voteCallback, optionNames, gradingLevels }) {
+  constructor({ voteCallback, optionNames, gradingLevels }) {
     this.voteCallback = voteCallback
     this.optionNames = optionNames
     this.gradingLevels = gradingLevels
@@ -115,15 +117,17 @@ class VoteForm {
       }, {})
       voteCallback(voteObject)
     })
-    this.el = el('div', [this.optionRateFormList, this.submitButton], {style: Object.assign({}, cardStyle, {
-      maxWidth: '500px'
-    })})
+    this.el = el('div', [this.optionRateFormList, this.submitButton], {
+      style: Object.assign({}, cardStyle, {
+        maxWidth: '500px'
+      })
+    })
   }
-  updateSelectedValue (optionName, value) {
+  updateSelectedValue(optionName, value) {
     this.selectedValues[optionName] = value
     this.update()
   }
-  update () {
+  update() {
     this.optionRateFormList.update(this.optionNames.map(optionName => ({
       name: optionName,
       selectedValue: this.selectedValues[optionName]
@@ -135,18 +139,20 @@ class VoteForm {
 }
 
 class OptionRateForm {
-  constructor () {
-    this.name = el('div', {style: {
-      float: 'left',
-      width: '100px',
-      height: '50px',
-      textAlign: 'center',
-      verticalAlign: 'middle',
-      lineHeight: '50px',
-      overflow: 'hidden',
-      textOverflow: 'ellipsis',
-      whiteSpace: 'nowrap'
-    }})
+  constructor() {
+    this.name = el('div', {
+      style: {
+        float: 'left',
+        width: '100px',
+        height: '50px',
+        textAlign: 'center',
+        verticalAlign: 'middle',
+        lineHeight: '50px',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap'
+      }
+    })
     this.gradeBoxList = list('div', GradeBox)
     Object.assign(this.gradeBoxList.el.style, {
       display: 'grid',
@@ -154,11 +160,13 @@ class OptionRateForm {
       gridTemplateColumns: 'repeat(6; 1fr)',
       gridColumnGap: '5px'
     })
-    this.el = el('div', [this.name, this.gradeBoxList], {style: {
-      backgroundColor: 'lightgrey'
-    }})
+    this.el = el('div', [this.name, this.gradeBoxList], {
+      style: {
+        backgroundColor: 'lightgrey'
+      }
+    })
   }
-  update ({ name, selectedValue }, index, items, { gradingLevels, updateCallback }) {
+  update({ name, selectedValue }, index, items, { gradingLevels, updateCallback }) {
     this.selectedValue = selectedValue
     this.gradeBoxList.update(new Array(gradingLevels).fill(name), { selectedValue, updateCallback })
     this.name.textContent = name
@@ -167,20 +175,22 @@ class OptionRateForm {
 }
 
 class GradeBox {
-  constructor () {
-    this.el = el('div', {style: {
-      width: '40px',
-      height: '40px',
-      margin: 'auto',
-      cursor: 'pointer'
-    }})
+  constructor() {
+    this.el = el('div', {
+      style: {
+        width: '40px',
+        height: '40px',
+        margin: 'auto',
+        cursor: 'pointer'
+      }
+    })
   }
-  onmount () {
+  onmount() {
     this.el.addEventListener('click', event => {
       this.updateCallback(this.name, this.value)
     })
   }
-  update (data, index, items, { selectedValue, updateCallback }) {
+  update(data, index, items, { selectedValue, updateCallback }) {
     this.updateCallback = updateCallback
     this.name = data
     this.value = index

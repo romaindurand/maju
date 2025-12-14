@@ -1,13 +1,17 @@
+import {
+  InvalidOptionsError,
+  MissingOptionScoreError,
+  InvalidScoreError,
+  VoteStructureError
+} from './errors';
+
+export * from './errors';
+
 export interface Configuration {
   GRADING_LEVELS?: number;
 }
 
-export interface OptionInputObject {
-  name: string;
-  [key: string]: any;
-}
 
-export type OptionInput = string | OptionInputObject;
 
 export interface ScoreRatioOption {
   name: string;
@@ -30,35 +34,58 @@ export interface SortedOptionsResult {
 }
 
 export interface Poll {
-  getOptions: () => OptionInputObject[];
+  getOptions: () => string[];
   getVotes: () => VotesOption[];
   /**
    * @deprecated This function is deprecated. Use `addVotes` instead.
    */
   vote: (ratings: Record<string, number>) => void;
   addVotes: (votes: Record<string, number>[]) => void;
+  /**
+   * @deprecated This function is deprecated. Use `getResults` instead.
+   */
   getScoreCount: () => ScoreCountOption[];
+  /**
+   * @deprecated This function is deprecated. Use `getResults` instead.
+   */
   getScoreRatio: () => ScoreRatioOption[];
   getWinner: () => string[];
+  /**
+   * @deprecated This function is deprecated. Use `getResults` instead.
+   */
   getSortedOptions: () => SortedOptionsResult;
+  getResults: () => OptionResult[];
   GRADING_LEVELS: number;
 }
 
-export default function createPoll(optionList: OptionInput[], configuration: Configuration = { GRADING_LEVELS: 6 }): Poll {
+export type OptionResult = {
+  rank: number;
+  name: string;
+  scoreRatio: number[];
+  scoreCount: number[];
+  medianGrade: number;
+  /**
+   * The sum of the scoreRatio
+   */
+  score: number;
+}
+
+export default function createPoll(optionList: string[], configuration: Configuration = { GRADING_LEVELS: 6 }): Poll {
   const GRADING_LEVELS = configuration.GRADING_LEVELS ?? 6;
-  const normalizedOptions = normalizeOptions(optionList);
+  if (!optionList || !Array.isArray(optionList)) throw new InvalidOptionsError();
+  const normalizedOptions = [...optionList];
   const votes: number[][] = [];
 
   function vote(ratings: Record<string, number>) {
     const givenOptionNames = Object.keys(ratings).sort();
-    const optionNames = getOptionNames(normalizedOptions).sort();
+    const optionNames = [...normalizedOptions].sort();
     stringArrayEqual(optionNames, givenOptionNames);
     givenOptionNames.forEach((ratingKey) => {
       const score = ratings[ratingKey];
-      if (score === undefined) throw new Error(`Missing score for option '${ratingKey}'`);
+      if (score === undefined) throw new MissingOptionScoreError(ratingKey);
       isScoreValid(score, GRADING_LEVELS);
     });
-    const voteGrades = normalizedOptions.map((option) => ratings[option.name]);
+    const voteGrades = normalizedOptions.map((name) => ratings[name]);
     votes.push(voteGrades);
   }
 
@@ -124,21 +151,51 @@ export default function createPoll(optionList: OptionInput[], configuration: Con
   }
 
   function getScoreCount(): ScoreCountOption[] {
-    return normalizedOptions.map((option, index) => {
+    return normalizedOptions.map((name, index) => {
       const scoreCount = votes.reduce<number[]>((memo, vote) => {
         const givenNote = vote[index];
         memo[givenNote] += 1;
         return memo;
       }, new Array(GRADING_LEVELS).fill(0));
       return {
-        name: option.name,
+        name,
         scoreCount,
       };
     });
   }
 
+  function getResults(): OptionResult[] {
+    return getScoreCount().map((option, index) => {
+      const totalVotes = votes.length;
+      const scoreRatio = totalVotes === 0
+        ? new Array(option.scoreCount.length).fill(0)
+        : option.scoreCount.map((scoreCount) => scoreCount / totalVotes);
+
+      let medianGrade = 0;
+      if (totalVotes > 0) {
+        const optionVotes = option.scoreCount.reduce<number[]>((acc, count, grade) => {
+          return acc.concat(new Array(count).fill(grade));
+        }, []);
+        medianGrade = getMedianGrade(optionVotes);
+      }
+
+      const scoreSum = scoreRatio.reduce((memo, r) => memo + r, 0);
+      // Ensure score is exactly 1 when standard logic would make it ~1 due to floating point precision
+      const score = totalVotes > 0 ? 1 : scoreSum;
+
+      return {
+        rank: index,
+        name: option.name,
+        scoreRatio,
+        scoreCount: option.scoreCount,
+        medianGrade,
+        score,
+      };
+    });
+  }
+
   return {
-    getOptions: () => normalizedOptions,
+    getOptions: () => [...normalizedOptions],
     getVotes,
     vote,
     addVotes,
@@ -146,6 +203,7 @@ export default function createPoll(optionList: OptionInput[], configuration: Con
     getScoreRatio,
     getWinner,
     getSortedOptions,
+    getResults,
     GRADING_LEVELS,
   };
 }
@@ -179,22 +237,7 @@ function substractMedianVote(option: VotesOption): number {
   return getMedianGrade(option.votes);
 }
 
-function getOptionNames(normalizedOptions: OptionInputObject[]): string[] {
-  return normalizedOptions.map((option) => option.name);
-}
 
-function normalizeOptions(options: OptionInput[]): OptionInputObject[] {
-  if (!options || !Array.isArray(options)) throw new Error('You must provide an Array of available options');
-  return options.reduce<OptionInputObject[]>((memo, option) => {
-    if (typeof option === 'string') {
-      memo.push({ name: option });
-      return memo;
-    }
-    if (typeof (option as OptionInputObject).name !== 'string') throw new Error(`Options objects must at least have a 'name' property`);
-    memo.push(Object.assign({}, option));
-    return memo;
-  }, []);
-}
 
 function getMedianGrade(votes: number[]): number {
   if (votes.length === 1) return votes[0];
@@ -203,19 +246,15 @@ function getMedianGrade(votes: number[]): number {
 }
 
 function isScoreValid(score: number, GRADING_LEVELS: number): boolean {
-  const isValid = Number.isInteger(score) || score < 0 || score > GRADING_LEVELS - 1;
+  const isValid = Number.isInteger(score) && score >= 0 && score < GRADING_LEVELS;
   if (!isValid)
-    throw new Error(
-      `A score must be an Integer between 0 and ${GRADING_LEVELS - 1} (${GRADING_LEVELS} possible grades)\ngiven score: ${score}`
-    );
+    throw new InvalidScoreError(score, GRADING_LEVELS);
   return isValid;
 }
 
 function stringArrayEqual(array1: string[], array2: string[]): boolean {
   const areEqual = array1.every((value, index) => value === array2[index]) && array1.length === array2.length;
   if (!areEqual)
-    throw new Error(
-      `Given object keys doesn't match available options :\ngiven:    ${array1.toString()}\nexpected: ${array2.toString()}`
-    );
+    throw new VoteStructureError(array2, array1);
   return areEqual;
 }

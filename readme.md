@@ -9,30 +9,76 @@ Add maju to your project with `npm i maju` or `yarn add maju`
 The exposed method allows to create a poll :
 
 ```javascript
-const createPoll = require('maju')
+import createPoll from 'maju';
+
 const myPoll = createPoll(['Matrix', 'Ghostbusters', 'Terminator', 'Stargate'])
 ```
 
-Use the poll's `vote()` function to cast a vote. The object parameter must have a property for each poll option name. The value must be an integer between 0 and 5 (the higher the better, no "bad" or "excellent" rank to be speaking-language-independant).
+Use the poll's `addVotes()` function to cast votes. The object parameter must have a property for each poll option name. The value must be an integer between 0 and 5 (the higher the better, no "bad" or "excellent" rank to be speaking-language-independant).
 
 ```javascript
-myPoll.vote({ Matrix: 5, Stargate: 1, Ghostbusters: 0, Terminator: 2 })
+myPoll.addVotes([{ Matrix: 5, Stargate: 1, Ghostbusters: 0, Terminator: 2 }])
 ```
 
-Use the poll's `getWinner()` function to get the winner's name.
+Use the poll's `getResults()` function to get the detailed results.
+
 ```javascript
-console.log(myPoll.getWinner())
+console.log(myPoll.getResults())
 ```
+
+### Error Handling
+
+You can distinguish between different error types to handle them effectively:
+
+```typescript
+import { InvalidVoteError, VoteStructureError } from 'maju';
+
+try {
+  // Note: vote() is deprecated in favor of addVotes(), but detailed here for error handling example
+  poll.vote(userVote);
+} catch (error) {
+  if (error instanceof VoteStructureError) {
+    console.error(`Invalid vote keys. Expected: ${error.expected}, Given: ${error.given}`);
+  } else if (error instanceof InvalidVoteError) {
+    console.error("Vote rejected:", error.message);
+  }
+}
+```
+
+## API
+
+### `getResults()`
+Returns an array of `OptionResult` objects, sorted by rank (winner first). each result contains:
+- `rank`: The rank of the option (0 is best).
+- `name`: The option name.
+- `score`: The computed score.
+- `scoreRatio`: Array of ratios for each grade.
+- `scoreCount`: Array of raw counts for each grade.
+- `medianGrade`: The median grade value.
+
+### Deprecated Functions
+
+The following functions are deprecated and will be removed in future versions. Please update your code to use the new alternatives.
+
+- **`vote(ratings)`**: Use `addVotes([ratings])` instead.
+- **`getScoreCount()`**: Use `getResults()` instead. `result.scoreCount` contains this data.
+- **`getScoreRatio()`**: Use `getResults()` instead. `result.scoreRatio` contains this data.
+- **`getSortedOptions()`**: Use `getResults()` instead. The returned array is already sorted.
 
 ## Demo
-⚠️ _Don't forget to install dev dependancies with `yarn` or `npm i`_
+
+```
+pnpm i
+pnpm demo
+```
 
 Refer to `demo/index.js` for an usage example
-- `yarn demo:node` for a node-only example
-- `yarn demo` for a browser usage example
+- `pnpm demo:node` for a node-only example
+- `pnpm demo` for a browser usage example
 
 ## Majority Judgment
 Majority judgment is a single-winner voting system. Voters freely grade each candidate in one of several named ranks, for instance from "excellent" to "bad", and the candidate with the highest median grade is the winner.
+
 ### Ressources
 - Wikipedia article : https://en.wikipedia.org/wiki/Majority_judgment
 - ScienceEtonnante video : https://www.youtube.com/watch?v=ZoGH7d51bvc (french audio, english subtitles)
