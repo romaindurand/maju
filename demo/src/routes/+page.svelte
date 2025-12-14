@@ -30,46 +30,27 @@
   // Initialize poll
   let myPoll = createDemoPoll();
   
-  function getSafeOptions() {
-      const result = myPoll.getSortedOptions();
-      // @ts-ignore - handle legacy/stale lib version returning objects
-      return result.options.map((o: any) => (typeof o === 'object' && o !== null && 'name' in o) ? o.name : o);
-  }
-
-  function getSafeOptionNames() {
-      const opts = myPoll.getOptions();
-      // @ts-ignore - handle legacy/stale lib version returning objects
-      return opts.map((o: any) => (typeof o === 'object' && o !== null && 'name' in o) ? o.name : o);
-  }
-
   // Reactive state
-  let options = $state(getSafeOptions());
-  let scoreRatios = $state(myPoll.getScoreRatio());
-  let winner = $state(myPoll.getWinner());
+  let results = $state(myPoll.getResults());
   let gradingLevels = $state(myPoll.GRADING_LEVELS);
-  let optionNames = $state(getSafeOptionNames());
   
-  // Using derived state for cardsData
-  let cardsData = $derived(options.map(optionName => {
-      // @ts-ignore - typing might be loose for scoreRatios
-      const ratioObj = scoreRatios.find(r => r.name === optionName);
-      return {
-          name: optionName,
-          scoreRatio: ratioObj ? ratioObj.scoreRatio.map((v: any) => v ?? 0) : []
-      };
-  }));
-
+  // Using derived state for UI
+  let cardsData = $derived(results.map(r => ({
+      name: r.name,
+      scoreRatio: r.scoreRatio
+  })));
+  
+  let winner = $derived(results.filter(r => r.rank === 0).map(r => r.name));
+  let optionNames = $derived(myPoll.getOptions());
+  
   function updateState() {
-      options = getSafeOptions();
-      scoreRatios = myPoll.getScoreRatio();
-      winner = myPoll.getWinner();
+      results = myPoll.getResults();
       gradingLevels = myPoll.GRADING_LEVELS;
-      optionNames = getSafeOptionNames();
   }
   
   function handleVote(voteObject: Record<string, number | null>) {
       // @ts-ignore - voteObject typing
-      myPoll.vote(voteObject);
+      myPoll.addVotes([voteObject]);
       updateState();
   }
 

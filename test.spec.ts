@@ -191,5 +191,17 @@ describe('maju', () => {
       expect(results[0].medianGrade).toBe(3)
       expect(results[0].score).toBe(1)
     })
+    it('should assign the same rank to tied candidates', () => {
+      const poll = createPoll(['Option A', 'Option B']);
+      poll.addVotes([
+        { 'Option A': 3, 'Option B': 3 },
+        { 'Option A': 4, 'Option B': 4 }
+      ]);
+      const results = poll.getResults();
+
+      expect(results[0].rank).toBe(results[1].rank);
+      expect(results[0].rank).toBe(0);
+      expect(results[1].rank).toBe(0);
+    });
   })
 })

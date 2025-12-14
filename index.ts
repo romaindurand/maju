@@ -165,18 +165,32 @@ export default function createPoll(optionList: string[], configuration: Configur
   }
 
   function getResults(): OptionResult[] {
-    return getScoreCount().map((option, index) => {
+    const sortedVotes = getVotes().sort(sortAlgorithm);
+    let currentRank = 0;
+
+    return sortedVotes.map((option, index) => {
+      // Calculate rank considering ties
+      if (index > 0) {
+        const comparison = sortAlgorithm(sortedVotes[index - 1], option);
+        if (comparison !== 0) {
+          currentRank = index;
+        }
+      }
+
       const totalVotes = votes.length;
+
+      const scoreCount = new Array(GRADING_LEVELS).fill(0);
+      option.votes.forEach((grade) => {
+        scoreCount[grade] += 1;
+      });
+
       const scoreRatio = totalVotes === 0
-        ? new Array(option.scoreCount.length).fill(0)
-        : option.scoreCount.map((scoreCount) => scoreCount / totalVotes);
+        ? new Array(GRADING_LEVELS).fill(0)
+        : scoreCount.map((count) => count / totalVotes);
 
       let medianGrade = 0;
       if (totalVotes > 0) {
-        const optionVotes = option.scoreCount.reduce<number[]>((acc, count, grade) => {
-          return acc.concat(new Array(count).fill(grade));
-        }, []);
-        medianGrade = getMedianGrade(optionVotes);
+        medianGrade = getMedianGrade(option.votes);
       }
 
       const scoreSum = scoreRatio.reduce((memo, r) => memo + r, 0);
@@ -184,10 +198,10 @@ export default function createPoll(optionList: string[], configuration: Configur
       const score = totalVotes > 0 ? 1 : scoreSum;
 
       return {
-        rank: index,
+        rank: currentRank,
         name: option.name,
         scoreRatio,
-        scoreCount: option.scoreCount,
+        scoreCount,
         medianGrade,
         score,
       };

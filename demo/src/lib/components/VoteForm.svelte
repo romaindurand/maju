@@ -6,21 +6,8 @@
   let selectedValues = $state<Record<string, number | null>>({});
 
   let gradient = $derived(tinygradient(['#88FF88', '#880000']));
-  // Generate colors corresponding to grades.
-  // Based on ScoreGraph logic: colors array corresponds to reversed grades (Best to Worst).
-  // But here we iterate i from 0 to N.
-  // If ScoreGraph colors[0] is Top (Best), then we map our grades to that.
   let generatedColors = $derived(gradingLevels > 0 ? gradient.hsv(gradingLevels, true).map((t: any) => t.toHexString()) : []);
   
-  // Helper to get color for index i
-  // If i=0 is Left, and we map it to index in generatedColors.
-  // We assume i=0 -> Worst -> Last Color? Or i=0 -> Best -> First Color?
-  // Let's assume standard Maju layout: Left=Reject (Worst), Right=Excellent (Best).
-  // ScoreGraph colors: [Green, ..., Red]. Green=Best. Red=Worst.
-  // So Green is at index 0 of colors. Red is at index N of colors.
-  // If i=0 is Worst, we want Red. So we want index N.
-  // If i=N is Best, we want Green. So we want index 0.
-  // So index for i is (gradingLevels - 1 - i).
   function getColor(i: number) {
      if (!generatedColors.length) return '#eee';
      return generatedColors[gradingLevels - 1 - i];
