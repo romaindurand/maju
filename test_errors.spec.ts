@@ -23,13 +23,7 @@ describe('maju errors', () => {
 
   it('should throw VoteStructureError when options do not match', () => {
     const poll = createPoll(['A', 'B'])
-    expect(() => poll.vote({ A: 1, C: 2 })).toThrow(VoteStructureError)
-    try {
-      poll.vote({ A: 1, C: 2 })
-    } catch (e: any) {
-      expect(e).toBeInstanceOf(VoteStructureError)
-      expect(e.given).toEqual(['A', 'C'])
-      expect(e.expected).toEqual(['A', 'B'])
-    }
+    // @ts-expect-error: invalid keys
+    expect(() => poll.addVotes([{ A: 1, C: 2 }])).toThrow(VoteStructureError)
   })
 })

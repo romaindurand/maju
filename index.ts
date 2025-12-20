@@ -11,89 +11,90 @@ export interface Configuration {
   GRADING_LEVELS?: number;
 }
 
-
-
-export interface ScoreRatioOption {
-  name: string;
+export interface ScoreRatioOption<TOptions extends readonly string[] = readonly string[]> {
+  name: TOptions[number];
   scoreRatio: number[];
 }
 
-export interface VotesOption {
-  name: string;
+export interface VotesOption<TOptions extends readonly string[] = readonly string[]> {
+  name: TOptions[number];
   votes: number[];
 }
 
-export interface ScoreCountOption {
-  name: string;
+export interface ScoreCountOption<TOptions extends readonly string[] = readonly string[]> {
+  name: TOptions[number];
   scoreCount: number[];
 }
 
-export interface SortedOptionsResult {
-  options: string[];
-  ties: [string, string][];
+export interface SortedOptionsResult<TOptions extends readonly string[] = readonly string[]> {
+  options: TOptions[number][];
+  ties: [TOptions[number], TOptions[number]][];
 }
 
-export interface Poll {
-  getOptions: () => string[];
-  getVotes: () => VotesOption[];
+export interface Poll<TOptions extends readonly string[] = readonly string[]> {
+  getOptions: () => TOptions[number][];
+  getVotes: () => VotesOption<TOptions>[];
   /**
    * @deprecated This function is deprecated. Use `addVotes` instead.
    */
-  vote: (ratings: Record<string, number>) => void;
-  addVotes: (votes: Record<string, number>[]) => void;
+  vote: (ratings: Record<TOptions[number], number>) => void;
+  addVotes: (votes: Record<TOptions[number], number>[]) => void;
   /**
    * @deprecated This function is deprecated. Use `getResults` instead.
    */
-  getScoreCount: () => ScoreCountOption[];
+  getScoreCount: () => ScoreCountOption<TOptions>[];
   /**
    * @deprecated This function is deprecated. Use `getResults` instead.
    */
-  getScoreRatio: () => ScoreRatioOption[];
-  getWinner: () => string[];
+  getScoreRatio: () => ScoreRatioOption<TOptions>[];
+  getWinner: () => TOptions[number][];
   /**
    * @deprecated This function is deprecated. Use `getResults` instead.
    */
-  getSortedOptions: () => SortedOptionsResult;
-  getResults: () => OptionResult[];
+  getSortedOptions: () => SortedOptionsResult<TOptions>;
+  getResults: () => OptionResult<TOptions>[];
   GRADING_LEVELS: number;
 }
 
-export type OptionResult = {
+export type OptionResult<TOptions extends readonly string[] = readonly string[]> = {
   rank: number;
-  name: string;
+  name: TOptions[number];
   scoreRatio: number[];
   scoreCount: number[];
   medianGrade: number;
 }
 
-export default function createPoll(optionList: string[], configuration: Configuration = { GRADING_LEVELS: 6 }): Poll {
+export default function createPoll<const TOptions extends readonly string[]>(
+  optionList: TOptions,
+  configuration: Configuration = { GRADING_LEVELS: 6 }
+): Poll<TOptions> {
   const GRADING_LEVELS = configuration.GRADING_LEVELS ?? 6;
   if (!optionList || !Array.isArray(optionList)) throw new InvalidOptionsError();
   const normalizedOptions = [...optionList];
   const votes: number[][] = [];
 
-  function vote(ratings: Record<string, number>) {
+  function vote(ratings: Record<TOptions[number], number>) {
     const givenOptionNames = Object.keys(ratings).sort();
     const optionNames = [...normalizedOptions].sort();
     stringArrayEqual(optionNames, givenOptionNames);
     givenOptionNames.forEach((ratingKey) => {
-      const score = ratings[ratingKey];
+      const score = ratings[ratingKey as TOptions[number]];
       if (score === undefined) throw new MissingOptionScoreError(ratingKey);
       isScoreValid(score, GRADING_LEVELS);
     });
-    const voteGrades = normalizedOptions.map((name) => ratings[name]);
+    const voteGrades = normalizedOptions.map((name) => ratings[name as TOptions[number]]);
     votes.push(voteGrades);
   }
 
-  function addVotes(votes: Record<string, number>[]) {
-    votes.forEach((v) => {
+  function addVotes(votesArr: Record<TOptions[number], number>[]) {
+    votesArr.forEach((v) => {
       vote(v);
     });
   }
 
-  function getWinner(): string[] {
+  function getWinner(): TOptions[number][] {
     const { options, ties } = getSortedOptions();
-    const winners = [options[0]];
+    const winners = [options[0]] as TOptions[number][];
 
     if (!ties.length) return winners;
 
@@ -107,12 +108,12 @@ export default function createPoll(optionList: string[], configuration: Configur
     }, {} as Record<string, number>);
     const tiedWithWinner = Object.keys(tieMap).filter(
       (optionName) => tieMap[optionName] === tieMap[winners[0]] && optionName !== winners[0]
-    );
+    ) as TOptions[number][];
     return [...winners, ...tiedWithWinner];
   }
 
-  function getSortedOptions(): SortedOptionsResult {
-    const ties: [string, string][] = [];
+  function getSortedOptions(): SortedOptionsResult<TOptions> {
+    const ties: [TOptions[number], TOptions[number]][] = [];
     const options = getVotes()
       .sort((a, b) => {
         const value = sortAlgorithm(a, b);
@@ -123,7 +124,7 @@ export default function createPoll(optionList: string[], configuration: Configur
     return { options, ties };
   }
 
-  function getScoreRatio(): ScoreRatioOption[] {
+  function getScoreRatio(): ScoreRatioOption<TOptions>[] {
     return getScoreCount().map((option) => {
       const scoreRatio = option.scoreCount.map((scoreCount) => scoreCount / votes.length);
       return {
@@ -133,7 +134,7 @@ export default function createPoll(optionList: string[], configuration: Configur
     });
   }
 
-  function getVotes(): VotesOption[] {
+  function getVotes(): VotesOption<TOptions>[] {
     return getScoreCount().map((option) => {
       const votesArr = option.scoreCount.reduce<number[]>((memo, scoreCount, index) => {
         memo = memo.concat(new Array(scoreCount).fill(index));
@@ -146,7 +147,7 @@ export default function createPoll(optionList: string[], configuration: Configur
     });
   }
 
-  function getScoreCount(): ScoreCountOption[] {
+  function getScoreCount(): ScoreCountOption<TOptions>[] {
     return normalizedOptions.map((name, index) => {
       const scoreCount = votes.reduce<number[]>((memo, vote) => {
         const givenNote = vote[index];
@@ -154,22 +155,21 @@ export default function createPoll(optionList: string[], configuration: Configur
         return memo;
       }, new Array(GRADING_LEVELS).fill(0));
       return {
-        name,
+        name: name as TOptions[number],
         scoreCount,
       };
     });
   }
 
-  function getResults(): OptionResult[] {
+  function getResults(): OptionResult<TOptions>[] {
     const sortedVotes = getVotes().sort(sortAlgorithm);
     let currentRank = 0;
 
     return sortedVotes.map((option, index) => {
-      // Calculate rank considering ties
       if (index > 0) {
         const comparison = sortAlgorithm(sortedVotes[index - 1], option);
         if (comparison !== 0) {
-          currentRank = index;
+          currentRank += 1;
         }
       }
 
@@ -189,7 +189,6 @@ export default function createPoll(optionList: string[], configuration: Configur
         medianGrade = getMedianGrade(option.votes);
       }
 
-
       return {
         rank: currentRank,
         name: option.name,
@@ -201,7 +200,7 @@ export default function createPoll(optionList: string[], configuration: Configur
   }
 
   return {
-    getOptions: () => [...normalizedOptions],
+    getOptions: () => [...normalizedOptions] as TOptions[number][],
     getVotes,
     vote,
     addVotes,
@@ -214,7 +213,7 @@ export default function createPoll(optionList: string[], configuration: Configur
   };
 }
 
-function sortAlgorithm(a: VotesOption, b: VotesOption): number {
+function sortAlgorithm<TOptions extends readonly string[]>(a: VotesOption<TOptions>, b: VotesOption<TOptions>): number {
   let aMedianGrade = getMedianGrade(a.votes);
   let bMedianGrade = getMedianGrade(b.votes);
   if (aMedianGrade !== bMedianGrade) return bMedianGrade - aMedianGrade;
@@ -233,7 +232,7 @@ function sortAlgorithm(a: VotesOption, b: VotesOption): number {
   return bMedianGrade - aMedianGrade;
 }
 
-function substractMedianVote(option: VotesOption): number {
+function substractMedianVote<TOptions extends readonly string[]>(option: VotesOption<TOptions>): number {
   const medianGrade = getMedianGrade(option.votes);
   let index = 0;
   while (index < option.votes.length - 1 && option.votes[index] < medianGrade) {
@@ -242,8 +241,6 @@ function substractMedianVote(option: VotesOption): number {
   option.votes.splice(index, 1);
   return getMedianGrade(option.votes);
 }
-
-
 
 function getMedianGrade(votes: number[]): number {
   if (votes.length === 1) return votes[0];
