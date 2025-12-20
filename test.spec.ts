@@ -9,30 +9,30 @@ describe('maju', () => {
 
   it('demo test', () => {
     const poll = createPoll(['Matrix', 'Terminator', 'Stargate', 'Ghostbusters'])
-    poll.vote({ Matrix: 5, Stargate: 1, Ghostbusters: 0, Terminator: 1 })
-    poll.vote({ Matrix: 1, Stargate: 3, Ghostbusters: 1, Terminator: 0 })
-    poll.vote({ Matrix: 2, Stargate: 3, Ghostbusters: 5, Terminator: 3 })
-    poll.vote({ Matrix: 3, Stargate: 0, Ghostbusters: 3, Terminator: 5 })
-    poll.vote({ Matrix: 5, Stargate: 2, Ghostbusters: 4, Terminator: 2 })
-    poll.vote({ Matrix: 4, Stargate: 3, Ghostbusters: 5, Terminator: 0 })
-    poll.vote({ Matrix: 1, Stargate: 3, Ghostbusters: 5, Terminator: 4 })
-    poll.vote({ Matrix: 1, Stargate: 0, Ghostbusters: 3, Terminator: 5 })
-    poll.vote({ Matrix: 5, Stargate: 1, Ghostbusters: 1, Terminator: 3 })
-    poll.vote({ Matrix: 3, Stargate: 4, Ghostbusters: 2, Terminator: 4 })
-    poll.vote({ Matrix: 2, Stargate: 3, Ghostbusters: 4, Terminator: 3 })
-    poll.vote({ Matrix: 4, Stargate: 5, Ghostbusters: 3, Terminator: 5 })
-
-    expect(poll.getSortedOptions()).toEqual({ options: ['Ghostbusters', 'Terminator', 'Matrix', 'Stargate'], ties: [] })
+    poll.addVotes([
+      { Matrix: 5, Stargate: 1, Ghostbusters: 2, Terminator: 1 },
+      { Matrix: 1, Stargate: 3, Ghostbusters: 3, Terminator: 3 },
+      { Matrix: 2, Stargate: 3, Ghostbusters: 5, Terminator: 5 },
+      { Matrix: 3, Stargate: 0, Ghostbusters: 3, Terminator: 3 },
+    ]);
     expect(poll.getWinner().length).toBe(1)
     expect(poll.getWinner()[0]).toBe('Ghostbusters')
   })
 
   it('tie vote', () => {
     const poll = createPoll(['a', 'b', 'c', 'd'])
-    poll.vote({ a: 3, b: 4, c: 3, d: 4 })
-    poll.vote({ a: 4, b: 3, c: 4, d: 3 })
+    poll.addVotes([
+      { a: 3, b: 4, c: 3, d: 1 },
+      { a: 4, b: 3, c: 1, d: 3 },
+      { a: 2, b: 2, c: 2, d: 2 },
+    ])
     const winner = poll.getWinner()
-    expect(winner).toEqual(['a', 'b', 'c', 'd'])
+    const results = poll.getResults()
+    expect(results[0].rank).toBe(0)
+    expect(results[1].rank).toBe(0)
+    expect(results[2].rank).toBe(1)
+    expect(results[3].rank).toBe(1)
+    expect(winner).toEqual(['a', 'b'])
   })
 
   describe('getResults', () => {
@@ -47,7 +47,6 @@ describe('maju', () => {
         scoreRatio: [0, 0, 0, 0, 0, 0],
         scoreCount: [0, 0, 0, 0, 0, 0],
         medianGrade: 0,
-        score: 0
       })
     })
 
@@ -61,13 +60,11 @@ describe('maju', () => {
       expect(results[0].scoreCount).toEqual([0, 0, 0, 0, 0, 1])
       expect(results[0].scoreRatio).toEqual([0, 0, 0, 0, 0, 1])
       expect(results[0].medianGrade).toBe(5)
-      expect(results[0].score).toBe(1)
 
       expect(results[1].name).toBe('Option B')
       expect(results[1].scoreCount).toEqual([0, 0, 1, 0, 0, 0])
       expect(results[1].scoreRatio).toEqual([0, 0, 1, 0, 0, 0])
       expect(results[1].medianGrade).toBe(2)
-      expect(results[1].score).toBe(1)
     })
 
     it('should calculate correct scoreRatio with multiple votes', () => {
@@ -81,12 +78,10 @@ describe('maju', () => {
       expect(results[0].name).toBe('Option A')
       expect(results[0].scoreCount).toEqual([0, 0, 0, 1, 1, 2])
       expect(results[0].scoreRatio).toEqual([0, 0, 0, 0.25, 0.25, 0.5])
-      expect(results[0].score).toBe(1)
 
       expect(results[1].name).toBe('Option B')
       expect(results[1].scoreCount).toEqual([0, 1, 2, 1, 0, 0])
       expect(results[1].scoreRatio).toEqual([0, 0.25, 0.5, 0.25, 0, 0])
-      expect(results[1].score).toBe(1)
     })
 
     it('should assign correct ranks to all options', () => {
@@ -133,7 +128,6 @@ describe('maju', () => {
       expect(results.every(r => r.rank >= 0 && r.rank <= 3)).toBe(true)
       expect(results.every(r => r.scoreRatio.length === 6)).toBe(true)
       expect(results.every(r => r.scoreCount.length === 6)).toBe(true)
-      expect(results.every(r => r.score === 1)).toBe(true) // All scoreRatios should sum to 1
       expect(results.every(r => r.medianGrade >= 0 && r.medianGrade <= 5)).toBe(true)
     })
 
@@ -189,7 +183,6 @@ describe('maju', () => {
       expect(results[0].scoreCount).toEqual([0, 0, 0, 3, 0, 0])
       expect(results[0].scoreRatio).toEqual([0, 0, 0, 1, 0, 0])
       expect(results[0].medianGrade).toBe(3)
-      expect(results[0].score).toBe(1)
     })
     it('should assign the same rank to tied candidates', () => {
       const poll = createPoll(['Option A', 'Option B']);

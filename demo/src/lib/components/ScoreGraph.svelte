@@ -3,16 +3,15 @@
 
   let { scoreRatio = [], width = 35, height = 300 } = $props();
 
-  let gradient = $derived(tinygradient(['#88FF88', '#880000']));
-  let tinycolors = $derived(scoreRatio.length ? gradient.hsv(scoreRatio.length, true) : []);
+  let gradient = $derived(tinygradient(['#880000', '#88FF88']));
+  let tinycolors = $derived(scoreRatio.length ? gradient.hsv(scoreRatio.length, false) : []);
   let colors = $derived(tinycolors.map((t: any) => t.toHexString()));
 
-  let reversedScoreRatio = $derived([...scoreRatio].reverse());
 </script>
 
 <div class="relative mt-2">
-  <div class="flex flex-col w-full">
-    {#each reversedScoreRatio as ratio, index}
+  <div class="flex flex-col-reverse w-full">
+    {#each scoreRatio as ratio, index}
       <div 
         class="relative flex items-center justify-center text-[10px] font-medium transition-all duration-500 ease-in-out"
         style:background-color={colors[index]}

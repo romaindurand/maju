@@ -64,10 +64,6 @@ export type OptionResult = {
   scoreRatio: number[];
   scoreCount: number[];
   medianGrade: number;
-  /**
-   * The sum of the scoreRatio
-   */
-  score: number;
 }
 
 export default function createPoll(optionList: string[], configuration: Configuration = { GRADING_LEVELS: 6 }): Poll {
@@ -193,9 +189,6 @@ export default function createPoll(optionList: string[], configuration: Configur
         medianGrade = getMedianGrade(option.votes);
       }
 
-      const scoreSum = scoreRatio.reduce((memo, r) => memo + r, 0);
-      // Ensure score is exactly 1 when standard logic would make it ~1 due to floating point precision
-      const score = totalVotes > 0 ? 1 : scoreSum;
 
       return {
         rank: currentRank,
@@ -203,7 +196,6 @@ export default function createPoll(optionList: string[], configuration: Configur
         scoreRatio,
         scoreCount,
         medianGrade,
-        score,
       };
     });
   }

@@ -56,7 +56,7 @@ try {
 Returns an array of `OptionResult` objects, sorted by rank (winner first). Each result contains:
 - `rank`: The rank of the option (0 is best). Ties have the same rank.
 - `name`: The option name.
-- `score`: The computed score.
+
 - `scoreRatio`: Array of ratios for each grade.
 - `scoreCount`: Array of raw counts for each grade.
 - `medianGrade`: The median grade value.

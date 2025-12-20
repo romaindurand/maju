@@ -37,7 +37,8 @@
   // Using derived state for UI
   let cardsData = $derived(results.map(r => ({
       name: r.name,
-      scoreRatio: r.scoreRatio
+      scoreRatio: r.scoreRatio,
+      rank: r.rank
   })));
   
   let winner = $derived(results.filter(r => r.rank === 0).map(r => r.name));
@@ -84,11 +85,12 @@
 
     <div class="flex flex-wrap justify-center gap-8 items-start relative">
       {#key pollKey}
-        {#each cardsData as card (card.name)}
+         {#each cardsData as card (card.name)}
            <div animate:flip={{ duration: 400, easing: cubicOut }}>
              <ScoreCard 
                name={card.name} 
-               scoreRatio={card.scoreRatio} 
+               scoreRatio={card.scoreRatio}
+               rank={card.rank}
              />
            </div>
         {/each}

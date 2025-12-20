@@ -13,7 +13,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "demo": "vite --config vite.config.ts",
+    "demo": "pnpm --filter demo dev",
     "demo:node": "node demo/index.js",
     "test": "vitest run --config vitest.config.ts",
     "prepare": "pnpm run build"
