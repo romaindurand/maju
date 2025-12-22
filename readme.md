@@ -57,18 +57,8 @@ Returns an array of `OptionResult` objects, sorted by rank (winner first). Each 
 - `rank`: The rank of the option (0 is best). Ties have the same rank.
 - `name`: The option name.
 
-- `scoreRatio`: Array of ratios for each grade.
-- `scoreCount`: Array of raw counts for each grade.
 - `medianGrade`: The median grade value.
-
-### Deprecated Functions
-
-The following functions are deprecated and will be removed in future versions. Please update your code to use the new alternatives.
-
-- **`vote(ratings)`**: Use `addVotes([ratings])` instead.
-- **`getScoreCount()`**: Use `getResults()` instead. `result.scoreCount` contains this data.
-- **`getScoreRatio()`**: Use `getResults()` instead. `result.scoreRatio` contains this data.
-- **`getSortedOptions()`**: Use `getResults()` instead. The returned array is already sorted.
+- `distribution`: Array of length `GRADING_LEVELS` with objects `{ count, percentage }` for each grade.
 
 ## Demo
 
